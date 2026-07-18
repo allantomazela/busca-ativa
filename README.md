@@ -62,6 +62,45 @@ pnpm preview      # visualizar build local
 - a Edge Function `google-places-search` protege a chave da Google Places API;
 - o CORS aceita somente origens explicitamente configuradas.
 
+## Docker
+
+A imagem serve a SPA via Nginx e injeta as variáveis de ambiente **em runtime**
+(`env.js`), permitindo construir uma única imagem e reutilizá-la em dev, homolog
+e produção apenas trocando as variáveis do container.
+
+### Com docker-compose (recomendado)
+
+```bash
+cp .env.docker.example .env.docker                       # preencha URL e chave
+docker compose --env-file .env.docker up -d --build      # http://localhost:8080
+docker compose --env-file .env.docker logs -f            # acompanhar logs
+docker compose --env-file .env.docker down               # parar
+```
+
+A porta do host é configurável por `APP_PORT` (padrão `8080`); o container sempre
+expõe a porta `80` internamente.
+
+### Sem compose (build + run manual)
+
+```bash
+docker build -t busca-ativa-web:latest .
+
+docker run -d --name busca-ativa \
+  -p 8080:80 \
+  -e VITE_SUPABASE_URL="https://seu-projeto.supabase.co" \
+  -e VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_sua_chave" \
+  -e VITE_APP_NAME="Busca Ativa Replay Sports" \
+  busca-ativa-web:latest
+```
+
+> Ambientes separados: mantenha um `.env.docker` por ambiente (ex.: `.env.docker-dev`,
+> `.env.docker-homolog`, `.env.docker-prod`) e aponte com
+> `docker compose --env-file .env.docker-prod up -d`.
+> Ao publicar em um domínio, lembre de incluí-lo em `ALLOWED_ORIGINS` da Edge Function.
+
+O backend (Supabase) é gerenciado e **não** faz parte desta imagem — apenas o
+frontend é containerizado.
+
 ## Configuração do Supabase
 
 O projeto remoto configurado é `rqxtwzkrwvxqsqrmbtxj`. Para publicar a estrutura:

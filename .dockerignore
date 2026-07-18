@@ -1,0 +1,28 @@
+node_modules
+dist
+dev-dist
+dist-ssr
+dev-dist-ssr
+.git
+.github
+.vscode
+.idea
+
+# Ambiente e segredos — nunca entram na imagem
+.env
+.env.*
+!.env.example
+
+# Artefatos de build/test
+*.tsbuildinfo
+*.log
+.pnpm-store
+.oxlintcache
+
+# Supabase (backend gerenciado, não faz parte da imagem do frontend)
+supabase
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
