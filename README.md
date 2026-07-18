@@ -101,6 +101,29 @@ docker run -d --name busca-ativa \
 O backend (Supabase) é gerenciado e **não** faz parte desta imagem — apenas o
 frontend é containerizado.
 
+### Imagem publicada (GHCR)
+
+O workflow `Docker Publish` constrói e envia a imagem para o GitHub Container
+Registry a cada push na `main` e a cada tag `vX.Y.Z`. Para usar a imagem pronta:
+
+```bash
+docker pull ghcr.io/allantomazela/busca-ativa:latest
+
+docker run -d --name busca-ativa \
+  -p 8080:80 \
+  -e VITE_SUPABASE_URL="https://seu-projeto.supabase.co" \
+  -e VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_sua_chave" \
+  ghcr.io/allantomazela/busca-ativa:latest
+```
+
+## Integração contínua (CI/CD)
+
+- `.github/workflows/ci.yml` — a cada push/PR na `main` roda formatação, lint,
+  typecheck, testes e build.
+- `.github/workflows/docker-publish.yml` — publica a imagem no GHCR (usa o
+  `GITHUB_TOKEN`, sem segredos adicionais). Gere uma versão com `git tag v0.0.3`
+  e `git push --tags` para taguear a imagem.
+
 ## Configuração do Supabase
 
 O projeto remoto configurado é `rqxtwzkrwvxqsqrmbtxj`. Para publicar a estrutura:
