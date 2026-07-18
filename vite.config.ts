@@ -2,14 +2,32 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-// @ts-expect-error - uidPlugin is a custom plugin
-import uidPlugin from './vite-plugin-react-uid'
+
+/**
+ * Deriva uma porta estável e única a partir do nome da pasta do projeto.
+ * Projetos diferentes recebem portas diferentes automaticamente, evitando
+ * conflitos ao rodar vários apps locais ao mesmo tempo.
+ */
+function derivePortFromProjectName(): number {
+  const projectName = path.basename(__dirname)
+  let hash = 0
+  for (let i = 0; i < projectName.length; i++) {
+    hash = (hash * 31 + projectName.charCodeAt(i)) & 0xffffffff
+  }
+  const rangeStart = 5200
+  const rangeSize = 700
+  return rangeStart + (Math.abs(hash) % rangeSize)
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: '::',
-    port: 8080,
+    host: 'localhost',
+    // Porta exclusiva por projeto (derivada do nome da pasta).
+    // Pode ser sobrescrita com a variável de ambiente PORT.
+    port: process.env.PORT ? Number(process.env.PORT) : derivePortFromProjectName(),
+    // Falha de forma explícita em vez de mudar de porta silenciosamente.
+    strictPort: true,
   },
   build: {
     outDir: mode === 'development' ? 'dev-dist' : 'dist',
@@ -26,10 +44,7 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-  plugins: [mode === 'development' ? uidPlugin() : undefined, react()].filter(Boolean),
-  define: {
-    'process.env.NODE_ENV': JSON.stringify(mode ?? process.env.NODE_ENV ?? 'production'),
-  },
+  plugins: [react()],
   resolve: {
     alias: [
       {

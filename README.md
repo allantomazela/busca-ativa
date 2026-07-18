@@ -1,131 +1,99 @@
-# Projeto Criado com o Skip
+# Busca Ativa Replay Sports
 
-Este projeto foi criado de ponta a ponta com o [Skip](https://goskip.dev).
+Aplicação web para busca e organização de leads comerciais.
 
-## 🚀 Stack Tecnológica
+## Stack
 
-- **React 19** - Biblioteca JavaScript para construção de interfaces
-- **Vite** - Build tool extremamente rápida
-- **TypeScript** - Superset tipado do JavaScript
-- **Shadcn UI** - Componentes reutilizáveis e acessíveis
-- **Tailwind CSS** - Framework CSS utility-first
-- **React Router** - Roteamento para aplicações React
-- **React Hook Form** - Gerenciamento de formulários performático
-- **Zod** - Validação de schemas TypeScript-first
-- **Recharts** - Biblioteca de gráficos para React
+- React 19
+- Vite 8
+- TypeScript
+- Tailwind CSS
+- Shadcn UI
+- React Router
+- Supabase (Auth, PostgreSQL e Edge Functions)
+- Vitest
 
-## 📋 Pré-requisitos
+## Pré-requisitos
 
-- Node.js 18+
-- npm
+- Node.js `^20.19.0` ou `>=22.12.0`
+- pnpm `>=10`
 
-## 🔧 Instalação
-
-```bash
-npm install
-```
-
-## 💻 Scripts Disponíveis
-
-### Desenvolvimento
+## Instalação
 
 ```bash
-# Iniciar servidor de desenvolvimento
-npm start
-# ou
-npm run dev
+pnpm install
 ```
 
-Abre a aplicação em modo de desenvolvimento em [http://localhost:5173](http://localhost:5173).
-
-### Build
+Crie o arquivo de ambiente local a partir do exemplo:
 
 ```bash
-# Build para produção
-npm run build
-
-# Build para desenvolvimento
-npm run build:dev
+copy .env.example .env.local
 ```
 
-Gera os arquivos otimizados para produção na pasta `dist/`.
+Preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`. Nunca coloque uma chave
+`service_role`, `secret` ou da Google no frontend.
 
-### Preview
+## Scripts
 
 ```bash
-# Visualizar build de produção localmente
-npm run preview
+pnpm dev          # desenvolvimento em http://localhost:5878
+pnpm typecheck    # validação TypeScript
+pnpm lint         # análise estática
+pnpm format       # formatação
+pnpm test         # testes unitários
+pnpm build        # typecheck + build de produção
+pnpm preview      # visualizar build local
 ```
 
-Permite visualizar a build de produção localmente antes do deploy.
+> A porta é derivada automaticamente do nome da pasta do projeto (via `vite.config.ts`),
+> garantindo uma porta estável e única por projeto. Para forçar outra porta, use a variável
+> de ambiente `PORT` (ex.: `PORT=3000 pnpm dev`).
 
-### Linting e Formatação
+## Arquitetura de produção
+
+- o acesso exige autenticação por e-mail e senha;
+- novos usuários se cadastram em `/signup` e ficam pendentes até aprovação do administrador;
+- o administrador gerencia liberações em `/admin/users`;
+- todos os usuários aprovados podem alterar nome, foto e senha nas configurações;
+- configurações de API e banco aparecem somente para administradores;
+- avatares ficam em bucket privado, limitados a 2 MB e protegidos por RLS;
+- pesquisas e leads são persistidos no PostgreSQL;
+- RLS garante que cada usuário acesse somente os próprios dados aprovados;
+- a Edge Function `google-places-search` protege a chave da Google Places API;
+- o CORS aceita somente origens explicitamente configuradas.
+
+## Configuração do Supabase
+
+O projeto remoto configurado é `rqxtwzkrwvxqsqrmbtxj`. Para publicar a estrutura:
 
 ```bash
-# Executar linter
-npm run lint
-
-# Executar linter e corrigir problemas automaticamente
-npm run lint:fix
-
-# Formatar código com Oxfmt
-npm run format
+pnpm dlx supabase login
+pnpm dlx supabase link --project-ref rqxtwzkrwvxqsqrmbtxj
+pnpm dlx supabase db push
+pnpm dlx supabase functions deploy google-places-search
+pnpm dlx supabase secrets set GOOGLE_PLACES_API_KEY=sua_chave
+pnpm dlx supabase secrets set ALLOWED_ORIGINS=https://seu-dominio.com.br
 ```
 
-## 📁 Estrutura do Projeto
+No Dashboard do Supabase:
 
-```
-.
-├── src/              # Código fonte da aplicação
-├── public/           # Arquivos estáticos
-├── dist/             # Build de produção (gerado)
-├── node_modules/     # Dependências (gerado)
-└── package.json      # Configurações e dependências do projeto
-```
+1. Em **Authentication**, desative cadastro público e mantenha login por e-mail/senha.
+2. Convide os usuários autorizados pelo painel administrativo.
+3. Configure a URL do site e os redirects com o domínio definitivo de produção.
+4. Ative a Google Places API (New) no Google Cloud e restrinja a chave ao uso dessa API.
 
-## 🎨 Componentes UI
+Enquanto `GOOGLE_PLACES_API_KEY` não estiver configurada, a busca retorna uma mensagem de
+indisponibilidade sem expor credenciais. A API do Google Places não fornece perfis sociais
+separados; Instagram ou Facebook só são preenchidos quando o próprio website retornado aponta para
+uma dessas redes. Uma fonte de enriquecimento específica será necessária para cobertura maior.
 
-Este template inclui uma biblioteca completa de componentes Shadcn UI baseados em Radix UI:
-
-- Accordion
-- Alert Dialog
-- Avatar
-- Button
-- Checkbox
-- Dialog
-- Dropdown Menu
-- Form
-- Input
-- Label
-- Select
-- Switch
-- Tabs
-- Toast
-- Tooltip
-- E muito mais...
-
-## 📝 Ferramentas de Qualidade de Código
-
-- **TypeScript**: Tipagem estática
-- **Oxlint**: Linter extremamente rápido
-- **Oxfmt**: Formatação automática de código
-
-## 🔄 Workflow de Desenvolvimento
-
-1. Instale as dependências: `npm install`
-2. Inicie o servidor de desenvolvimento: `npm start`
-3. Faça suas alterações
-4. Verifique o código: `npm run lint`
-5. Formate o código: `npm run format`
-6. Crie a build: `npm run build`
-7. Visualize a build: `npm run preview`
-
-## 📦 Build e Deploy
-
-Para criar uma build otimizada para produção:
+## Validação antes do deploy
 
 ```bash
-npm run build
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
 ```
 
-Os arquivos otimizados serão gerados na pasta `dist/` e estarão prontos para deploy.
+O servidor que hospedar a SPA deve redirecionar rotas desconhecidas para `index.html`.

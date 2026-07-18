@@ -8,7 +8,25 @@ import {
 } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Star, Phone, Globe, MapPin, Clock, Navigation, Users, Building2 } from 'lucide-react'
+import {
+  Star,
+  Phone,
+  Globe,
+  MapPin,
+  Clock,
+  Navigation,
+  Users,
+  Building2,
+  AtSign,
+  Share2,
+} from 'lucide-react'
+import {
+  formatSocialHandle,
+  normalizeFacebookUrl,
+  normalizeInstagramUrl,
+  normalizeWebsiteUrl,
+} from '@/lib/utils'
+import { resolveLeadLocation } from '@/lib/lead-table'
 
 interface LeadDetailsSheetProps {
   lead: Lead | null
@@ -17,6 +35,8 @@ interface LeadDetailsSheetProps {
 }
 
 export function LeadDetailsSheet({ lead, isOpen, onClose }: LeadDetailsSheetProps) {
+  const location = lead ? resolveLeadLocation(lead) : null
+
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
@@ -43,7 +63,7 @@ export function LeadDetailsSheet({ lead, isOpen, onClose }: LeadDetailsSheetProp
                 )}
                 {lead.rating > 0 && (
                   <Badge variant="outline" className="gap-1">
-                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                    <Star className="h-3 w-3 fill-brand-yellow text-brand-orange" />
                     {lead.rating.toFixed(1)}
                   </Badge>
                 )}
@@ -59,13 +79,18 @@ export function LeadDetailsSheet({ lead, isOpen, onClose }: LeadDetailsSheetProp
                       Endereço Completo
                     </p>
                     <p className="text-sm break-words">{lead.formatted_address}</p>
+                    {location && (
+                      <p className="mt-1 text-xs font-medium text-primary">
+                        {[location.city, location.state].filter(Boolean).join(' — ')}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 {lead.phone_number && (
                   <div className="flex items-start gap-3">
                     <div className="bg-muted p-2 rounded-lg shrink-0">
-                      <Phone className="w-4 h-4 text-emerald-600" />
+                      <Phone className="h-4 w-4 text-brand-pink" />
                     </div>
                     <div>
                       <p className="text-xs font-medium text-muted-foreground mb-0.5">Telefone</p>
@@ -82,17 +107,55 @@ export function LeadDetailsSheet({ lead, isOpen, onClose }: LeadDetailsSheetProp
                 {lead.website && (
                   <div className="flex items-start gap-3">
                     <div className="bg-muted p-2 rounded-lg shrink-0">
-                      <Globe className="w-4 h-4 text-blue-600" />
+                      <Globe className="h-4 w-4 text-brand-orange" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-medium text-muted-foreground mb-0.5">Website</p>
                       <a
-                        href={`https://${lead.website}`}
+                        href={normalizeWebsiteUrl(lead.website)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-primary hover:underline break-all"
                       >
                         {lead.website}
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {lead.instagram && (
+                  <div className="flex items-start gap-3">
+                    <div className="bg-muted p-2 rounded-lg shrink-0">
+                      <AtSign className="h-4 w-4 text-brand-pink" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground mb-0.5">Instagram</p>
+                      <a
+                        href={normalizeInstagramUrl(lead.instagram)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline break-all"
+                      >
+                        {formatSocialHandle(lead.instagram)}
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {lead.facebook && (
+                  <div className="flex items-start gap-3">
+                    <div className="bg-muted p-2 rounded-lg shrink-0">
+                      <Share2 className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground mb-0.5">Facebook</p>
+                      <a
+                        href={normalizeFacebookUrl(lead.facebook)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline break-all"
+                      >
+                        {formatSocialHandle(lead.facebook)}
                       </a>
                     </div>
                   </div>

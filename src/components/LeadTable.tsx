@@ -1,6 +1,13 @@
 import { Lead } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { getLeadTableRow, type LeadTableRow } from '@/lib/lead-table'
+import {
+  formatSocialHandle,
+  normalizeFacebookUrl,
+  normalizeInstagramUrl,
+  normalizeWebsiteUrl,
+} from '@/lib/utils'
 import {
   Table,
   TableBody,
@@ -9,104 +16,152 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Star, Phone, Globe, MapPin, Eye, CheckCircle2, XCircle } from 'lucide-react'
+import {
+  Star,
+  Phone,
+  Globe,
+  MapPin,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  AtSign,
+  Share2,
+} from 'lucide-react'
 
 interface LeadTableProps {
   leads: Lead[]
   onViewDetails: (lead: Lead) => void
 }
 
+const desktopColumns = ['Empresa', 'Localização', 'Contato', 'Redes e site', 'Avaliação'] as const
+
 export function LeadTable({ leads, onViewDetails }: LeadTableProps) {
   if (leads.length === 0) return null
 
   return (
-    <div className="hidden md:block rounded-lg border border-border/60 bg-card shadow-sm overflow-hidden">
-      <Table>
+    <div className="hidden overflow-x-auto rounded-lg border border-border/60 bg-card shadow-sm md:block">
+      <Table className="min-w-[920px]">
         <TableHeader>
           <TableRow className="bg-muted/50 hover:bg-muted/50">
-            <TableHead className="font-semibold text-xs uppercase tracking-wider">Nome</TableHead>
-            <TableHead className="font-semibold text-xs uppercase tracking-wider">
-              Endereço
+            {desktopColumns.map((label) => (
+              <TableHead
+                key={label}
+                className="whitespace-nowrap text-xs font-semibold uppercase tracking-wider"
+              >
+                {label}
+              </TableHead>
+            ))}
+            <TableHead className="w-[60px]">
+              <span className="sr-only">Ações</span>
             </TableHead>
-            <TableHead className="font-semibold text-xs uppercase tracking-wider">
-              Telefone
-            </TableHead>
-            <TableHead className="font-semibold text-xs uppercase tracking-wider">
-              Avaliação
-            </TableHead>
-            <TableHead className="font-semibold text-xs uppercase tracking-wider">Status</TableHead>
-            <TableHead className="w-[60px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {leads.map((lead) => (
-            <TableRow key={lead.id} className="hover:bg-muted/30 transition-colors">
-              <TableCell className="font-medium max-w-[200px]">
-                <div className="flex items-center gap-2">
-                  {lead.website && <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />}
-                  <span className="truncate">{lead.name}</span>
-                </div>
-              </TableCell>
-              <TableCell className="max-w-[220px]">
-                <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
-                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                  <span className="truncate">{lead.formatted_address}</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                {lead.phone_number ? (
-                  <span className="flex items-center gap-1.5 text-sm">
-                    <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    {lead.phone_number}
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground text-sm">—</span>
-                )}
-              </TableCell>
-              <TableCell>
-                {lead.rating > 0 ? (
-                  <div className="flex items-center gap-1">
-                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                    <span className="font-medium text-sm">{lead.rating.toFixed(1)}</span>
-                    <span className="text-xs text-muted-foreground">
-                      ({lead.user_ratings_total})
+          {leads.map((lead) => {
+            const row = getLeadTableRow(lead)
+
+            return (
+              <TableRow key={lead.id} className="align-top transition-colors hover:bg-muted/30">
+                <TableCell className="max-w-[280px] py-4">
+                  <p className="font-medium leading-snug">{row.name}</p>
+                  <p className="mt-1 flex items-start gap-1.5 text-xs leading-snug text-muted-foreground">
+                    <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+                    <span className="line-clamp-2">{row.address}</span>
+                  </p>
+                </TableCell>
+                <TableCell className="whitespace-nowrap py-4">
+                  <p className="text-sm">{row.city || '—'}</p>
+                  {row.state && (
+                    <Badge variant="secondary" className="mt-1 px-1.5 py-0 text-[11px]">
+                      {row.state}
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell className="whitespace-nowrap py-4">
+                  {row.phone ? (
+                    <span className="flex items-center gap-1.5 text-sm">
+                      <Phone className="h-3.5 w-3.5 shrink-0 text-brand-pink" />
+                      {row.phone}
                     </span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="py-4">
+                  <SocialLinks row={row} />
+                </TableCell>
+                <TableCell className="whitespace-nowrap py-4">
+                  {lead.rating > 0 ? (
+                    <span className="flex items-center gap-1 text-sm font-medium">
+                      <Star className="h-3.5 w-3.5 fill-brand-yellow text-brand-orange" />
+                      {row.rating}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">{row.rating}</span>
+                  )}
+                  <div className="mt-1.5">
+                    <StatusBadge isOpen={lead.is_open} />
                   </div>
-                ) : (
-                  <span className="text-muted-foreground text-sm">—</span>
-                )}
-              </TableCell>
-              <TableCell>
-                {lead.is_open ? (
-                  <Badge
-                    variant="outline"
-                    className="bg-emerald-500/10 text-emerald-700 border-emerald-500/20 gap-1"
+                </TableCell>
+                <TableCell className="py-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onViewDetails(lead)}
+                    className="h-8 w-8 p-0"
+                    aria-label={`Ver detalhes de ${lead.name}`}
                   >
-                    <CheckCircle2 className="w-3 h-3" /> Aberto
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="bg-red-500/10 text-red-700 border-red-500/20 gap-1"
-                  >
-                    <XCircle className="w-3 h-3" /> Fechado
-                  </Badge>
-                )}
-              </TableCell>
-              <TableCell>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onViewDetails(lead)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
+    </div>
+  )
+}
+
+function SocialLinks({ row }: { row: LeadTableRow }) {
+  const hasAny = row.website || row.instagram || row.facebook
+  if (!hasAny) return <span className="text-sm text-muted-foreground">—</span>
+
+  return (
+    <div className="flex flex-col gap-1">
+      {row.website && (
+        <a
+          href={normalizeWebsiteUrl(row.website)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+        >
+          <Globe className="h-3.5 w-3.5 shrink-0" />
+          Website
+        </a>
+      )}
+      {row.instagram && (
+        <a
+          href={normalizeInstagramUrl(row.instagram)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex max-w-[180px] items-center gap-1.5 text-sm text-brand-pink hover:underline"
+        >
+          <AtSign className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{formatSocialHandle(row.instagram)}</span>
+        </a>
+      )}
+      {row.facebook && (
+        <a
+          href={normalizeFacebookUrl(row.facebook)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex max-w-[180px] items-center gap-1.5 text-sm text-primary hover:underline"
+        >
+          <Share2 className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{formatSocialHandle(row.facebook)}</span>
+        </a>
+      )}
     </div>
   )
 }
@@ -115,51 +170,81 @@ export function LeadCardsMobile({ leads, onViewDetails }: LeadTableProps) {
   if (leads.length === 0) return null
 
   return (
-    <div className="md:hidden space-y-3">
-      {leads.map((lead) => (
-        <div
-          key={lead.id}
-          className="rounded-lg border border-border/60 bg-card p-4 shadow-sm active:scale-[0.99] transition-transform"
-          onClick={() => onViewDetails(lead)}
-        >
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className="font-semibold text-sm leading-tight">{lead.name}</h3>
-            {lead.is_open ? (
-              <Badge
-                variant="outline"
-                className="bg-emerald-500/10 text-emerald-700 border-emerald-500/20 shrink-0"
-              >
-                Aberto
-              </Badge>
-            ) : (
-              <Badge
-                variant="outline"
-                className="bg-red-500/10 text-red-700 border-red-500/20 shrink-0"
-              >
-                Fechado
-              </Badge>
-            )}
+    <div className="space-y-3 md:hidden">
+      {leads.map((lead) => {
+        const row = getLeadTableRow(lead)
+
+        return (
+          <div
+            key={lead.id}
+            className="rounded-lg border border-border/60 bg-card p-4 shadow-sm transition-transform active:scale-[0.99]"
+            onClick={() => onViewDetails(lead)}
+          >
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <h3 className="text-sm font-semibold leading-tight">{row.name}</h3>
+              <StatusBadge isOpen={lead.is_open} />
+            </div>
+            <div className="mb-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+              <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+              <span>{row.address}</span>
+            </div>
+            <div className="mb-3 flex flex-wrap gap-2">
+              <Badge variant="secondary">{row.city || 'Cidade não informada'}</Badge>
+              <Badge variant="outline">{row.state || 'UF não informada'}</Badge>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              {row.phone && (
+                <span className="flex items-center gap-1">
+                  <Phone className="h-3 w-3 text-brand-pink" />
+                  {row.phone}
+                </span>
+              )}
+              {lead.rating > 0 && (
+                <span className="flex items-center gap-1">
+                  <Star className="h-3 w-3 fill-brand-yellow text-brand-orange" />
+                  {row.rating}
+                </span>
+              )}
+              {row.website && (
+                <span className="flex items-center gap-1 text-primary">
+                  <Globe className="h-3 w-3" />
+                  Website
+                </span>
+              )}
+              {row.instagram && (
+                <span className="flex items-center gap-1 text-brand-pink">
+                  <AtSign className="h-3 w-3" />
+                  IG
+                </span>
+              )}
+              {row.facebook && (
+                <span className="flex items-center gap-1 text-primary">
+                  <Share2 className="h-3 w-3" />
+                  FB
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex items-start gap-1.5 text-xs text-muted-foreground mb-2">
-            <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
-            <span>{lead.formatted_address}</span>
-          </div>
-          <div className="flex items-center gap-3 text-xs">
-            {lead.phone_number && (
-              <span className="flex items-center gap-1">
-                <Phone className="w-3 h-3 text-emerald-600" />
-                {lead.phone_number}
-              </span>
-            )}
-            {lead.rating > 0 && (
-              <span className="flex items-center gap-1">
-                <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                {lead.rating.toFixed(1)} ({lead.user_ratings_total})
-              </span>
-            )}
-          </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
+  )
+}
+
+function StatusBadge({ isOpen }: { isOpen: boolean }) {
+  return isOpen ? (
+    <Badge
+      variant="outline"
+      className="shrink-0 gap-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+    >
+      <CheckCircle2 className="h-3 w-3" /> Aberto
+    </Badge>
+  ) : (
+    <Badge
+      variant="outline"
+      className="shrink-0 gap-1 border-red-500/20 bg-red-500/10 text-red-700"
+    >
+      <XCircle className="h-3 w-3" /> Fechado
+    </Badge>
   )
 }

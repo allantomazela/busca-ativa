@@ -3,8 +3,12 @@ export interface Lead {
   search_session_id: string
   name: string
   formatted_address: string
+  city: string
+  state: string
   phone_number: string
   website: string
+  instagram: string
+  facebook: string
   rating: number
   user_ratings_total: number
   latitude: number
@@ -24,8 +28,7 @@ export interface SearchSession {
 }
 
 export interface SearchResult {
-  results: Omit<Lead, 'id' | 'search_session_id' | 'created_at'>[]
+  results: Lead[]
+  session: SearchSession
   next_page_token: string | null
-  status: string
-  error_message?: string
 }

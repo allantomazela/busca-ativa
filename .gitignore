@@ -13,6 +13,7 @@ dist-ssr
 dev-dist
 dev-dist-ssr
 *.local
+*.tsbuildinfo
 .pnpm-store
 .pnpm
 
@@ -44,7 +45,7 @@ screenshot.png
 
 # Environment variables
 .env*
-!.env
+!.env.example
 
 # Linux kernel core dumps (e.g. when oxfmt or pnpm crash)
 core.[0-9]*

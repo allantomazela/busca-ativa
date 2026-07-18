@@ -1,7 +1,14 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
-import { Lead, SearchSession } from '@/lib/types'
-import { generateMockLeads } from '@/lib/mock-data'
-import { generateId } from '@/lib/utils'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
+import type { Lead, SearchSession } from '@/lib/types'
+import { parseSearchForm } from '@/lib/schemas'
+import {
+  deleteAllLeadData,
+  deleteSearchSession,
+  fetchLeadData,
+  searchGooglePlaces,
+  type ServiceResult,
+} from '@/services/lead-service'
 
 interface LeadStoreContextValue {
   leads: Lead[]
@@ -12,104 +19,75 @@ interface LeadStoreContextValue {
   error: string | null
   startSearch: (keyword: string, location: string) => Promise<void>
   loadMore: () => Promise<void>
+  clearAllData: () => Promise<ServiceResult<null>>
+  deleteSession: (sessionId: string) => Promise<ServiceResult<null>>
+  resetCurrentSearch: () => void
   clearError: () => void
 }
 
 const LeadStoreContext = createContext<LeadStoreContextValue | null>(null)
 
-const STORAGE_KEY = 'busca_ativa_leads'
-const HISTORY_KEY = 'busca_ativa_history'
-
 export function LeadStoreProvider({ children }: { children: ReactNode }) {
   const [leads, setLeads] = useState<Lead[]>([])
   const [searchHistory, setSearchHistory] = useState<SearchSession[]>([])
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [nextPageToken, setNextPageToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [lastSearch, setLastSearch] = useState<{ keyword: string; location: string } | null>(null)
 
   useEffect(() => {
-    try {
-      const storedLeads = localStorage.getItem(STORAGE_KEY)
-      const storedHistory = localStorage.getItem(HISTORY_KEY)
-      if (storedLeads) setLeads(JSON.parse(storedLeads))
-      if (storedHistory) setSearchHistory(JSON.parse(storedHistory))
-    } catch {
-      // ignore parse errors
-    }
-  }, [])
+    let active = true
 
-  const persistLeads = useCallback((newLeads: Lead[]) => {
-    setLeads(newLeads)
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newLeads))
-    } catch {
-      // ignore storage errors
-    }
-  }, [])
+    void fetchLeadData().then((result) => {
+      if (!active) return
+      if (result.success) {
+        setLeads(result.data.leads)
+        setSearchHistory(result.data.searchHistory)
+      } else {
+        setError(result.error)
+      }
+      setIsLoading(false)
+    })
 
-  const persistHistory = useCallback((history: SearchSession[]) => {
-    setSearchHistory(history)
-    try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
-    } catch {
-      // ignore storage errors
+    return () => {
+      active = false
     }
   }, [])
 
   const startSearch = useCallback(async (keyword: string, location: string) => {
-    if (!keyword.trim()) {
-      setError('Por favor, informe um termo de busca.')
+    const parsed = parseSearchForm(keyword, location)
+    if (!parsed.success) {
+      setError(parsed.error)
       return
     }
+
+    const { keyword: normalizedKeyword, location: normalizedLocation } = parsed.data
 
     setIsLoading(true)
     setError(null)
     setNextPageToken(null)
 
-    try {
-      await new Promise((r) => setTimeout(r, 1200))
+    const result = await searchGooglePlaces({
+      keyword: normalizedKeyword,
+      location: normalizedLocation,
+    })
 
-      const sessionId = generateId()
-      const mockLeads = generateMockLeads(keyword, location, sessionId, 15)
-      const hasMore = Math.random() > 0.4
-
-      setLeads((prev) => {
-        const updated = [...mockLeads, ...prev]
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-        } catch {
-          /* ignore */
-        }
-        return updated
-      })
-
-      setCurrentSessionId(sessionId)
-      setNextPageToken(hasMore ? generateId() : null)
-      setLastSearch({ keyword, location })
-
-      const session: SearchSession = {
-        id: sessionId,
-        keyword,
-        location,
-        lead_count: mockLeads.length,
-        created_at: new Date().toISOString(),
-      }
-      setSearchHistory((prev) => {
-        const updated = [session, ...prev]
-        try {
-          localStorage.setItem(HISTORY_KEY, JSON.stringify(updated))
-        } catch {
-          /* ignore */
-        }
-        return updated
-      })
-    } catch {
-      setError('Erro ao buscar leads. Tente novamente.')
-    } finally {
+    if (!result.success) {
+      setError(result.error)
       setIsLoading(false)
+      return
     }
+
+    setLeads((current) => mergeLeads(result.data.results, current))
+    setCurrentSessionId(result.data.session.id)
+    setNextPageToken(result.data.next_page_token)
+    setLastSearch({ keyword: normalizedKeyword, location: normalizedLocation })
+    setSearchHistory((current) => [
+      result.data.session,
+      ...current.filter((session) => session.id !== result.data.session.id),
+    ])
+    setIsLoading(false)
   }, [])
 
   const loadMore = useCallback(async () => {
@@ -118,48 +96,65 @@ export function LeadStoreProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     setError(null)
 
-    try {
-      await new Promise((r) => setTimeout(r, 1000))
+    const result = await searchGooglePlaces({
+      keyword: lastSearch.keyword,
+      location: lastSearch.location,
+      sessionId: currentSessionId,
+      pageToken: nextPageToken,
+    })
 
-      const moreLeads = generateMockLeads(
-        lastSearch.keyword,
-        lastSearch.location,
-        currentSessionId,
-        10,
-      )
-      const hasMore = Math.random() > 0.5
-
-      setLeads((prev) => {
-        const updated = [...moreLeads, ...prev]
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-        } catch {
-          /* ignore */
-        }
-        return updated
-      })
-
-      setNextPageToken(hasMore ? generateId() : null)
-
-      setSearchHistory((prev) => {
-        const updated = prev.map((s) =>
-          s.id === currentSessionId ? { ...s, lead_count: s.lead_count + moreLeads.length } : s,
-        )
-        try {
-          localStorage.setItem(HISTORY_KEY, JSON.stringify(updated))
-        } catch {
-          /* ignore */
-        }
-        return updated
-      })
-    } catch {
-      setError('Erro ao carregar mais resultados.')
-    } finally {
+    if (!result.success) {
+      setError(result.error)
       setIsLoading(false)
+      return
     }
+
+    setLeads((current) => mergeLeads(result.data.results, current))
+    setNextPageToken(result.data.next_page_token)
+    setSearchHistory((current) =>
+      current.map((session) => (session.id === currentSessionId ? result.data.session : session)),
+    )
+    setIsLoading(false)
   }, [nextPageToken, currentSessionId, lastSearch])
 
+  const clearAllData = useCallback(async () => {
+    const result = await deleteAllLeadData()
+    if (result.success) {
+      setLeads([])
+      setSearchHistory([])
+      setCurrentSessionId(null)
+      setNextPageToken(null)
+      setLastSearch(null)
+    }
+    return result
+  }, [])
+
+  const deleteSession = useCallback(
+    async (sessionId: string) => {
+      const result = await deleteSearchSession(sessionId)
+      if (!result.success) return result
+
+      setLeads((current) => current.filter((lead) => lead.search_session_id !== sessionId))
+      setSearchHistory((current) => current.filter((session) => session.id !== sessionId))
+
+      if (currentSessionId === sessionId) {
+        setCurrentSessionId(null)
+        setNextPageToken(null)
+        setLastSearch(null)
+      }
+
+      return result
+    },
+    [currentSessionId],
+  )
+
   const clearError = useCallback(() => setError(null), [])
+  const resetCurrentSearch = useCallback(() => {
+    setCurrentSessionId(null)
+    setNextPageToken(null)
+    setLastSearch(null)
+    setError(null)
+  }, [])
 
   return (
     <LeadStoreContext.Provider
@@ -172,6 +167,9 @@ export function LeadStoreProvider({ children }: { children: ReactNode }) {
         error,
         startSearch,
         loadMore,
+        clearAllData,
+        deleteSession,
+        resetCurrentSearch,
         clearError,
       }}
     >
@@ -184,4 +182,9 @@ export default function useLeadStore() {
   const ctx = useContext(LeadStoreContext)
   if (!ctx) throw new Error('useLeadStore must be used within LeadStoreProvider')
   return ctx
+}
+
+function mergeLeads(incoming: Lead[], current: Lead[]) {
+  const incomingIds = new Set(incoming.map((lead) => lead.id))
+  return [...incoming, ...current.filter((lead) => !incomingIds.has(lead.id))]
 }

@@ -3,12 +3,26 @@ import useLeadStore from '@/stores/use-lead-store'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { useToast } from '@/hooks/use-toast'
 import { exportToCSV } from '@/lib/utils'
-import { Download, Search, Clock, MapPin, Users, Trash2, FileDown } from 'lucide-react'
+import { Download, Search, Clock, MapPin, Users, FileDown, Loader2, Trash2 } from 'lucide-react'
 
 export default function History() {
-  const { leads, searchHistory } = useLeadStore()
+  const { leads, searchHistory, deleteSession, clearAllData } = useLeadStore()
+  const { toast } = useToast()
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const sessionLeads = useMemo(() => {
     if (!selectedSession) return []
@@ -28,6 +42,34 @@ export default function History() {
     }
   }
 
+  const handleDeleteSession = async (sessionId: string) => {
+    setDeletingId(sessionId)
+    const result = await deleteSession(sessionId)
+    setDeletingId(null)
+
+    if (!result.success) {
+      toast({ title: 'Erro ao excluir busca', description: result.error, variant: 'destructive' })
+      return
+    }
+
+    if (selectedSession === sessionId) setSelectedSession(null)
+    toast({ title: 'Busca excluída', description: 'Os leads dessa busca também foram removidos.' })
+  }
+
+  const handleClearAll = async () => {
+    setDeletingId('all')
+    const result = await clearAllData()
+    setDeletingId(null)
+
+    if (!result.success) {
+      toast({ title: 'Erro ao limpar dados', description: result.error, variant: 'destructive' })
+      return
+    }
+
+    setSelectedSession(null)
+    toast({ title: 'Meus Leads limpo', description: 'Todas as buscas e leads foram removidos.' })
+  }
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -38,14 +80,20 @@ export default function History() {
           </p>
         </div>
         {leads.length > 0 && (
-          <Button
-            onClick={handleExportAll}
-            variant="outline"
-            className="gap-2 border-emerald-500/30 text-emerald-700 hover:text-emerald-800"
-          >
-            <FileDown className="w-4 h-4" />
-            Exportar Todos ({leads.length})
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={handleExportAll}
+              variant="outline"
+              className="gap-2 border-brand-orange/30 text-brand-orange hover:bg-brand-orange/5 hover:text-brand-orange"
+            >
+              <FileDown className="w-4 h-4" />
+              Exportar Todos ({leads.length})
+            </Button>
+            <ClearAllDialog
+              isDeleting={deletingId === 'all'}
+              onConfirm={() => void handleClearAll()}
+            />
+          </div>
         )}
       </div>
 
@@ -98,20 +146,27 @@ export default function History() {
                         </span>
                       </div>
                     </div>
-                    {sessionCount > 0 && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="gap-1.5 text-emerald-700 hover:text-emerald-800"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleExportSession(session.id)
-                        }}
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        CSV
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {sessionCount > 0 && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="gap-1.5 text-brand-orange hover:bg-brand-orange/5 hover:text-brand-orange"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            handleExportSession(session.id)
+                          }}
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          CSV
+                        </Button>
+                      )}
+                      <DeleteSessionDialog
+                        sessionName={session.keyword}
+                        isDeleting={deletingId === session.id}
+                        onConfirm={() => void handleDeleteSession(session.id)}
+                      />
+                    </div>
                   </div>
 
                   {isSelected && sessionLeads.length > 0 && (
@@ -141,5 +196,89 @@ export default function History() {
         </div>
       )}
     </div>
+  )
+}
+
+function DeleteSessionDialog({
+  sessionName,
+  isDeleting,
+  onConfirm,
+}: {
+  sessionName: string
+  isDeleting: boolean
+  onConfirm: () => void
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={isDeleting}
+          className="h-8 w-8 p-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          aria-label={`Excluir busca ${sessionName}`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {isDeleting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir esta busca?</AlertDialogTitle>
+          <AlertDialogDescription>
+            A busca “{sessionName}” e todos os leads vinculados a ela serão excluídos
+            permanentemente.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Excluir busca
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
+function ClearAllDialog({ isDeleting, onConfirm }: { isDeleting: boolean; onConfirm: () => void }) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline" disabled={isDeleting} className="gap-2 text-destructive">
+          {isDeleting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+          Limpar tudo
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Limpar todos os leads?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Todas as buscas e todos os leads da sua conta serão excluídos permanentemente. Esta ação
+            não pode ser desfeita.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Excluir tudo
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

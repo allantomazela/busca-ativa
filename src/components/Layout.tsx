@@ -11,29 +11,42 @@ import {
   SidebarMenuButton,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { Search, Users, Settings, Zap, MapPin } from 'lucide-react'
+import { LogOut, Search, Settings, ShieldCheck, UserCheck, Users } from 'lucide-react'
+import { BrandLogo } from '@/components/BrandLogo'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
+import { getUserInitials } from '@/lib/profile'
+import useAuth from '@/stores/use-auth'
 
 export default function Layout() {
   const location = useLocation()
+  const { user, profile, avatarUrl, isAdmin, signOut } = useAuth()
+  const { toast } = useToast()
 
-  const navItems = [
-    { title: 'Nova Busca', url: '/', icon: Search },
-    { title: 'Meus Leads', url: '/history', icon: Users },
-    { title: 'Configurações', url: '/settings', icon: Settings },
-  ]
+  async function handleSignOut() {
+    const result = await signOut()
+    if (!result.success) {
+      toast({
+        title: 'Erro ao sair',
+        description: result.error,
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const items = isAdmin
+    ? [...navItems, { title: 'Aprovações', url: '/admin/users', icon: UserCheck }]
+    : navItems
 
   return (
     <SidebarProvider>
       <div className="min-h-screen w-full flex bg-background">
-        <Sidebar className="border-r shadow-sm hidden md:flex">
-          <SidebarContent>
-            <div className="p-6 flex items-center gap-3">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <MapPin className="w-6 h-6 text-primary" />
-              </div>
-              <span className="font-bold text-xl tracking-tight text-foreground">
-                Busca Ativa Pro
-              </span>
+        <Sidebar className="hidden border-r border-primary/10 shadow-sm md:flex">
+          <SidebarContent className="relative overflow-hidden">
+            <div className="brand-gradient absolute inset-x-0 top-0 h-1" />
+            <div className="px-5 pb-5 pt-7">
+              <BrandLogo />
             </div>
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground font-semibold px-6 mb-2">
@@ -41,12 +54,12 @@ export default function Layout() {
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu className="px-3 gap-1">
-                  {navItems.map((item) => (
+                  {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton
                         asChild
                         isActive={location.pathname === item.url}
-                        className="py-5 px-4 transition-all duration-200 ease-in-out hover:bg-secondary"
+                        className="py-5 px-4 transition-all duration-200 ease-in-out hover:bg-primary/5 data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
                       >
                         <Link to={item.url} className="flex items-center gap-3">
                           <item.icon className="w-5 h-5" />
@@ -62,24 +75,43 @@ export default function Layout() {
         </Sidebar>
 
         <main className="flex-1 flex flex-col min-h-screen overflow-hidden relative">
-          <header className="h-16 border-b bg-card/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-8 z-10 sticky top-0">
+          <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-primary/10 bg-card/85 px-4 backdrop-blur-md sm:px-8">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="md:hidden" />
-              <h1 className="font-semibold text-lg md:hidden">Busca Ativa Pro</h1>
+              <BrandLogo compact className="md:hidden" />
+              <span className="hidden text-sm font-semibold sm:inline md:hidden">
+                Busca Ativa Replay Sports
+              </span>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full border border-border/50">
-                <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-                <span>Status da API: Operacional</span>
+              <div className="hidden items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-sm text-muted-foreground sm:flex">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                <span>Ambiente seguro</span>
               </div>
-              <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm shadow-sm cursor-pointer hover:bg-primary/90 transition-colors">
-                US
-              </div>
+              <Avatar className="h-9 w-9 border border-primary/15">
+                <AvatarImage src={avatarUrl ?? undefined} alt="Foto do perfil" />
+                <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                  {getUserInitials(profile?.full_name, user?.email)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden max-w-48 truncate text-sm text-muted-foreground lg:inline">
+                {profile?.full_name || user?.email}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={handleSignOut}
+                aria-label="Sair da conta"
+                title="Sair da conta"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           </header>
 
-          <div className="flex-1 overflow-auto p-4 sm:p-8 bg-slate-50/50 dark:bg-transparent relative">
+          <div className="relative flex-1 overflow-auto p-4 sm:p-8">
             <Outlet />
           </div>
         </main>
@@ -87,3 +119,9 @@ export default function Layout() {
     </SidebarProvider>
   )
 }
+
+const navItems = [
+  { title: 'Nova Busca', url: '/', icon: Search },
+  { title: 'Meus Leads', url: '/history', icon: Users },
+  { title: 'Configurações', url: '/settings', icon: Settings },
+]

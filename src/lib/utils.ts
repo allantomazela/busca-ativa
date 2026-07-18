@@ -1,44 +1,61 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import type { Lead } from '@/lib/types'
+import { getLeadTableRow, leadTableColumns } from '@/lib/lead-table'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function generateId() {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36)
+export function normalizeWebsiteUrl(website: string) {
+  const trimmed = website.trim()
+  if (!trimmed) return ''
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  return `https://${trimmed}`
 }
 
-export function exportToCSV(leads: any[], filename: string) {
-  const BOM = '\uFEFF'
-  const headers = [
-    'Nome',
-    'Endereço',
-    'Telefone',
-    'Site',
-    'Avaliação',
-    'Total de Avaliações',
-    'Latitude',
-    'Longitude',
-    'Aberto Agora',
-  ]
+export function normalizeInstagramUrl(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
 
-  const rows = leads.map((lead) => {
-    return [
-      `"${lead.name?.replace(/"/g, '""') || ''}"`,
-      `"${lead.formatted_address?.replace(/"/g, '""') || ''}"`,
-      `"${lead.phone_number || ''}"`,
-      `"${lead.website || ''}"`,
-      lead.rating || 0,
-      lead.user_ratings_total || 0,
-      lead.latitude || '',
-      lead.longitude || '',
-      lead.is_open ? 'Sim' : 'Não',
-    ].join(',')
-  })
+  const handle = trimmed
+    .replace(/^@/, '')
+    .replace(/^(www\.)?instagram\.com\//i, '')
+    .replace(/\/+$/, '')
 
-  const csvContent = BOM + headers.join(',') + '\n' + rows.join('\n')
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  return `https://instagram.com/${handle}`
+}
+
+export function normalizeFacebookUrl(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+
+  const handle = trimmed
+    .replace(/^@/, '')
+    .replace(/^(www\.)?facebook\.com\//i, '')
+    .replace(/\/+$/, '')
+
+  return `https://facebook.com/${handle}`
+}
+
+export function formatSocialHandle(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  if (trimmed.startsWith('@')) return trimmed
+  if (/instagram\.com|facebook\.com/i.test(trimmed)) {
+    const handle = trimmed
+      .replace(/^https?:\/\//i, '')
+      .replace(/^(www\.)?(instagram|facebook)\.com\//i, '')
+      .replace(/\/+$/, '')
+    return handle ? `@${handle}` : trimmed
+  }
+  return `@${trimmed.replace(/^@/, '')}`
+}
+
+export function exportToCSV(leads: Lead[], filename: string) {
+  const blob = new Blob([createLeadCsv(leads)], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
 
   const link = document.createElement('a')
@@ -49,3 +66,20 @@ export function exportToCSV(leads: any[], filename: string) {
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
 }
+
+export function createLeadCsv(leads: Lead[]): string {
+  const headers = leadTableColumns.map((column) => escapeCsvValue(column.label))
+  const rows = leads.map((lead) => {
+    const row = getLeadTableRow(lead)
+    return leadTableColumns.map((column) => escapeCsvValue(row[column.key])).join(CSV_SEPARATOR)
+  })
+
+  return `${UTF8_BOM}${headers.join(CSV_SEPARATOR)}\r\n${rows.join('\r\n')}`
+}
+
+function escapeCsvValue(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`
+}
+
+const UTF8_BOM = '\uFEFF'
+const CSV_SEPARATOR = ';'

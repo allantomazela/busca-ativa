@@ -6,8 +6,8 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* #F8FAFC - Light Gray background */
-    --foreground: 222.2 84% 4.9%;
+    --background: 210 50% 98%;
+    --foreground: 214 55% 12%;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -15,9 +15,14 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Primary: #2563EB Corporate Blue */
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
+    /* Azul BIC: #005BAC */
+    --primary: 208 100% 34%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Cores de apoio extraídas da marca Replay Sports */
+    --brand-pink: 337 88% 46%;
+    --brand-orange: 14 91% 56%;
+    --brand-yellow: 52 100% 55%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -25,8 +30,8 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%; /* Slate */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 208 100% 96%;
+    --accent-foreground: 208 100% 28%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -37,18 +42,18 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 208 100% 34%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 221.2 83.2% 53.3%;
+    --sidebar-primary: 208 100% 34%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 208 100% 96%;
+    --sidebar-accent-foreground: 208 100% 28%;
     --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 221.2 83.2% 53.3%;
+    --sidebar-ring: 208 100% 34%;
   }
 
   .dark {
@@ -58,8 +63,8 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 208 100% 48%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -86,6 +91,9 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+    background-image:
+      radial-gradient(circle at 85% 5%, hsl(var(--primary) / 0.08), transparent 28rem),
+      radial-gradient(circle at 10% 95%, hsl(var(--brand-pink) / 0.05), transparent 26rem);
   }
 }
 
@@ -113,5 +121,22 @@
   }
   .animate-slide-in-right {
     animation: slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  .brand-gradient {
+    background-image: linear-gradient(
+      110deg,
+      hsl(var(--brand-pink)),
+      hsl(var(--brand-orange)) 55%,
+      hsl(var(--brand-yellow))
+    );
+  }
+  .brand-gradient-text {
+    background-image: linear-gradient(
+      110deg,
+      hsl(var(--brand-pink)),
+      hsl(var(--brand-orange)) 55%,
+      hsl(var(--brand-yellow))
+    );
+    @apply bg-clip-text text-transparent;
   }
 }
