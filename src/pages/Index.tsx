@@ -73,7 +73,7 @@ export default function Index() {
         <div className="brand-gradient absolute inset-y-0 left-0 w-1.5" />
         <div className="relative flex items-center justify-between gap-6">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-brand-pink/15 bg-brand-pink/5 px-3 py-1 text-xs font-semibold text-brand-pink">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
               <Sparkles className="h-3.5 w-3.5" />
               Inteligência para prospecção
             </div>
@@ -113,8 +113,8 @@ export default function Index() {
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="rounded-full bg-brand-pink/10 p-3">
-                <BarChart3 className="h-5 w-5 text-brand-pink" />
+              <div className="rounded-full bg-brand-orange/10 p-3">
+                <BarChart3 className="h-5 w-5 text-brand-orange" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Com Telefone</p>

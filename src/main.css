@@ -6,32 +6,33 @@
 
 @layer base {
   :root {
-    --background: 210 50% 98%;
-    --foreground: 214 55% 12%;
+    /* Fundo claro com leve toque do Azul Bic */
+    --background: 232 45% 98%;
+    --foreground: 239 55% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 239 55% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 239 55% 12%;
 
-    /* Azul BIC: #005BAC */
-    --primary: 208 100% 34%;
+    /* Azul Bic / navy Replay Sports: #03045e */
+    --primary: 239 94% 19%;
     --primary-foreground: 0 0% 100%;
 
-    /* Cores de apoio extraídas da marca Replay Sports */
-    --brand-pink: 337 88% 46%;
-    --brand-orange: 14 91% 56%;
-    --brand-yellow: 52 100% 55%;
+    /* Acentos da logo Replay (rosa → laranja → amarelo), sem tom roxo */
+    --brand-pink: 330 86% 48%;
+    --brand-orange: 18 95% 55%;
+    --brand-yellow: 44 100% 55%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 232 40% 95%;
+    --secondary-foreground: 239 55% 14%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%; /* Slate */
+    --muted: 232 35% 95%;
+    --muted-foreground: 232 16% 42%;
 
-    --accent: 208 100% 96%;
-    --accent-foreground: 208 100% 28%;
+    --accent: 232 55% 95%;
+    --accent-foreground: 239 94% 19%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -40,50 +41,51 @@
     --success: 160 84% 39%;
     --success-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 208 100% 34%;
+    --border: 232 28% 88%;
+    --input: 232 28% 88%;
+    --ring: 239 94% 19%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 208 100% 34%;
+    --sidebar-foreground: 239 55% 12%;
+    --sidebar-primary: 239 94% 19%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 208 100% 96%;
-    --sidebar-accent-foreground: 208 100% 28%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 208 100% 34%;
+    --sidebar-accent: 232 55% 95%;
+    --sidebar-accent-foreground: 239 94% 19%;
+    --sidebar-border: 232 28% 90%;
+    --sidebar-ring: 239 94% 19%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 208 100% 48%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --background: 239 55% 8%;
+    --foreground: 232 40% 96%;
+    --card: 239 45% 11%;
+    --card-foreground: 232 40% 96%;
+    --popover: 239 45% 11%;
+    --popover-foreground: 232 40% 96%;
+    /* Azul Bic mais claro para contraste no fundo escuro */
+    --primary: 232 78% 62%;
+    --primary-foreground: 239 55% 8%;
+    --secondary: 239 30% 16%;
+    --secondary-foreground: 232 40% 96%;
+    --muted: 239 30% 16%;
+    --muted-foreground: 232 18% 68%;
+    --accent: 239 30% 16%;
+    --accent-foreground: 232 78% 72%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217.2 91.2% 59.8%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 224.3 76.3% 48%;
+    --border: 239 28% 18%;
+    --input: 239 28% 18%;
+    --ring: 232 78% 62%;
+    --sidebar-background: 239 55% 8%;
+    --sidebar-foreground: 232 40% 96%;
+    --sidebar-primary: 232 78% 62%;
+    --sidebar-primary-foreground: 239 55% 8%;
+    --sidebar-accent: 239 30% 16%;
+    --sidebar-accent-foreground: 232 40% 96%;
+    --sidebar-border: 239 28% 18%;
+    --sidebar-ring: 232 78% 62%;
   }
 
   * {
@@ -92,8 +94,8 @@
   body {
     @apply bg-background text-foreground font-sans;
     background-image:
-      radial-gradient(circle at 85% 5%, hsl(var(--primary) / 0.08), transparent 28rem),
-      radial-gradient(circle at 10% 95%, hsl(var(--brand-pink) / 0.05), transparent 26rem);
+      radial-gradient(circle at 88% 0%, hsl(var(--primary) / 0.1), transparent 30rem),
+      radial-gradient(circle at 8% 100%, hsl(var(--brand-orange) / 0.06), transparent 26rem);
   }
 }
 

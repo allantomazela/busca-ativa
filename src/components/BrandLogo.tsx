@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 export function BrandLogo({ compact = false, className }: BrandLogoProps) {
   return (
     <div className={cn('flex items-center gap-3', className)}>
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-slate-950 p-2 shadow-lg shadow-primary/15">
+      <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary p-2 shadow-lg shadow-primary/25">
         <img
           src="/brand-logo.webp"
           alt="Logo Replay Sports"
